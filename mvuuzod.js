@@ -1,10 +1,10 @@
 import { z } from 'https://cdn.jsdelivr.net/npm/zod@3.22.4/+esm';
 
 // =============================================================================
-// 1. ZOD SCHEMA (PHIÊN BẢN V4 - FINAL UNLOCKED)
+// ZOD SCHEMA V4 - BẢN THÁO KHOÁN (FIX LỖI ADD)
 // =============================================================================
-// Mục tiêu: Cho phép lệnh ADD hoạt động tự do, không bị lỗi "non-extensible".
 
+// Helper ép kiểu
 const zNum = z.preprocess((val) => (val === null || val === undefined || val === '') ? 0 : (isNaN(parseFloat(val)) ? 0 : parseFloat(val)), z.number().default(0));
 const zStr = z.preprocess((val) => {
     if (Array.isArray(val)) return val.join(", ");
@@ -12,7 +12,7 @@ const zStr = z.preprocess((val) => {
     return val == null ? "" : String(val);
 }, z.string().default(''));
 
-// Định nghĩa cơ bản cho Sandbox
+// --- SCHEMA SA BÀN ---
 const SandboxSchema = z.object({
     sandbox_id: zStr, 
     sandbox_name: zStr,
@@ -28,17 +28,21 @@ const SandboxSchema = z.object({
     evolution_stability: zNum.default(100),
     active_era_child_count: zNum.default(0),
 
-    // [QUAN TRỌNG NHẤT] MỞ KHÓA TOÀN BỘ CÁC MẢNG
-    // Dùng z.array(z.any()) thay vì định nghĩa cứng nhắc
+    // [QUAN TRỌNG] Thay đổi từ Strict sang z.any() để chấp nhận mọi lệnh ADD
     environment_tags: z.array(z.any()).default([]),
     genetic_slots: z.array(z.any()).default([]),
     tech_tree: z.array(z.any()).default([]),
-    chronicles: z.array(z.any()).default([]),      // <--- Sửa lỗi ADD nhật ký
-    era_heroes: z.array(z.any()).default([]),      // <--- Sửa lỗi ADD hero
+    
+    // 👇 ĐÂY LÀ CHỖ SỬA LỖI CHO NHẬT KÝ
+    chronicles: z.array(z.any()).default([]),     
+    
+    // 👇 ĐÂY LÀ CHỖ SỬA LỖI CHO HERO
+    era_heroes: z.array(z.any()).default([]),     
+    
     sandbox_methods: z.array(z.any()).default([]),
 }).passthrough();
 
-// Định nghĩa cơ bản cho Ký Chủ
+// --- SCHEMA KÝ CHỦ ---
 const CreatorSchema = z.object({
     real_name: zStr.default("{{user}}"),
     real_time_passed: zNum,
@@ -48,10 +52,12 @@ const CreatorSchema = z.object({
     host_health: zStr.default("Khỏe Mạnh"),
     active_sandbox_index: zNum.default(0),
     
-    // MỞ KHÓA TOÀN BỘ CÁC MẢNG
     host_genetic_slots: z.array(z.any()).default([]),
     host_avatars: z.array(z.any()).default([]),
-    harvest_log: z.array(z.any()).default([]),     // <--- Sửa lỗi ADD kho tàng
+    
+    // 👇 ĐÂY LÀ CHỖ SỬA LỖI CHO KHO TÀNG
+    harvest_log: z.array(z.any()).default([]),    
+    
     knowledge_library: z.array(z.any()).default([]),
     real_world_inventory: z.array(z.any()).default([]),
     spatial_connections: z.array(z.any()).default([]),
@@ -67,7 +73,7 @@ const CreatorSchema = z.object({
 
 }).passthrough();
 
-// Root Schema
+// --- ROOT SCHEMA ---
 export const Schema = z.object({ 
     creator: CreatorSchema, 
     world: z.object({}).passthrough().default({}), 
@@ -75,7 +81,7 @@ export const Schema = z.object({
 }).passthrough();
 
 // =============================================================================
-// 2. LOGIC XỬ LÝ LỆNH JSON PATCH
+// LOGIC XỬ LÝ LỆNH (GIỮ NGUYÊN)
 // =============================================================================
 
 function parsePath(pathStr) {
@@ -164,10 +170,7 @@ function applyOperation(data, op) {
     }
 }
 
-// =============================================================================
-// 3. KẾT NỐI VÀO SILLY TAVERN
-// =============================================================================
-
+// --- KẾT NỐI ---
 function registerVariableSchema(schema, options) {
     if (window.Mvu && window.Mvu.registerVariableSchema) {
         window.Mvu.registerVariableSchema(schema, options);
@@ -190,7 +193,7 @@ function showToast(msg, type = 'info') {
 function initListener() {
     if (typeof eventOn === 'undefined') { setTimeout(initListener, 100); return; }
     
-    showToast("MVU V4 Loaded (ADD Unlocked)", "success");
+    showToast("MVU V4 Loaded (Unlocked)", "success");
 
     eventOn('mag_command_parsed_for_zod', (context, commands) => {
         let isModified = false;
@@ -214,9 +217,7 @@ function initListener() {
         }
     });
 }
-
 initListener();
-
 export function registerMvuSchema(schema) {
     registerVariableSchema(z.object({ stat_data: schema }), { type: 'message' });
 }
